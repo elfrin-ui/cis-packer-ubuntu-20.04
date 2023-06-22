@@ -1,0 +1,98 @@
+{
+  "variables": {
+    "version": "1.0",
+    "ssh_private_key_file": "key/provision"
+  },
+
+  "provisioners": [
+    {
+      "type": "file",
+      "sources": ["config/ansible.cfg", "config/local.yml"],
+      "destination": "/var/tmp/"
+    },
+    {
+      "type": "shell",
+      "environment_vars": ["ANSIBLE_CONFIG=/var/tmp/ansible.cfg", "HOME_DIR=/home/ubuntu", "TMPDIR=/var/tmp"],
+      "execute_command": "echo 'harden6' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
+      "expect_disconnect": "true",
+      "pause_before": "10s",
+      "remote_folder": "/var/tmp",
+      "scripts": [
+	      "scripts/setup.sh",
+	      "scripts/hardening.sh",
+	      "scripts/cleanup.sh"
+       ]
+    }
+  ],
+
+  "builders": [
+    {
+      "type": "vmware-iso",
+      "name": "ubuntu-harden",
+      "vm_name": "packer-UB20.04-ova-hardened",
+      "vmdk_name": "packer-UB20.04-ova-hardened",
+      "remote_host": "{{user `packer_remote_host`}}",
+      "remote_datastore": "{{user `packer_remote_datastore`}}",
+      "remote_username": "{{user `packer_remote_username`}}",
+      "remote_password": "{{user `packer_remote_password`}}",
+      "remote_type": "esx5",
+      "http_directory": "http",
+
+      "boot_command": [
+	"<esc><wait><esc><wait><f6><wait><esc><wait>",
+        "<bs><bs><bs><bs><bs>",
+        "ip=10.10.180.119::10.10.180.254:255.255.255.0::::10.10.180.1 ",
+        "autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ",
+        " ---<wait>",
+        "<enter>"
+      ],
+
+      "boot_wait": "5s",
+      "cpus": 2,
+      "memory": 4096,
+      "disk_size": 81920,
+      "guest_os_type": "ubuntu-64",
+      "headless": false,
+      
+      "tools_upload_flavor": "linux",
+      "iso_urls": [
+        "iso/ubuntu-20.04.5-live-server-amd64.iso",
+        "https://releases.ubuntu.com/focal/ubuntu-20.04.5-live-server-amd64.iso"
+      ],
+      "iso_checksum": "5035be37a7e9abbdc09f0d257f3e33416c1a0fb322ba860d42d74aa75c3468d4",
+      "communicator": "ssh",
+      "ssh_pty": "true",
+      "ssh_host": "10.10.180.119",
+      "ssh_username": "root",
+      "ssh_private_key_file": "{{user `ssh_private_key_file`}}",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "1800s",
+      "shutdown_command": "rm -rf /home/ubuntu/.ssh/authorized_keys && rm -rf /root/.ssh/authorized_keys && sed -ie 's/PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && shutdown -P now",
+      
+      "vmx_data": {
+        "ethernet0.networkName": "{{user `packer_remote_network`}}",
+        "ethernet0.present": "TRUE",
+        "ethernet0.startConnected": "TRUE",
+        "ethernet0.addressType": "generated",
+        "ethernet0.generatedAddressOffset": "0",
+        "ethernet0.wakeOnPcktRcv": "FALSE",
+        "floppy0.present": "FALSE"
+      },
+      "vmx_data_post": {
+        "ide1:0.startConnected": "FALSE",
+        "ide1:0.clientDevice": "TRUE",
+        "ide1:0.fileName": "emptyBackingString",
+        "ethernet0.virtualDev": "vmxnet3"
+      }
+    }
+  ],
+
+  "post-processors": [
+    {
+      "type": "shell-local",
+      "inline": ["ovftool --shaAlgorithm=SHA1 output-ubuntu-harden/packer-UB20.04-ova-hardened/packer-UB20.04-ova-hardened.ovf builds/packer-UB20.04-ova-hardened.ova && chmod 644 builds/packer-UB20.04-ova-hardened.ova"]
+    }
+  ]
+
+}
+

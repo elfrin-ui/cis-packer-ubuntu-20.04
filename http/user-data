@@ -1,0 +1,90 @@
+#cloud-config
+autoinstall:
+  early-commands:
+    # Stop ssh for packer
+    - sudo systemctl stop ssh
+  late-commands:
+    - |
+      curtin in-target --target=/target -- /bin/bash -c ' \
+        echo "ubuntu ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/ubuntu; \
+        chmod 440 /etc/sudoers.d/ubuntu; \
+        mkdir -p /root/.ssh; \
+        chmod 0700 /root/.ssh; \
+        echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC89pLqT/Z9dBzCGX7H6bwJula1KFoDt4//v4qvVslyy9Kz6mb04/6OrdfqqLCP+enlVGZnqRB0oJwvDhKLMqxvMEYs4KhxzelmOsYt0KvOSory+fPVbA7+L65qpNvxx+hOhZkASng8EK/K7k93vymDeklS8wFlD7HCDSNNAAWXZvxX2/UfOhYTiwXg7AT8N1oG5Wbfg8472diIw7N90wq27pZOhTFIQvGe7H9LVdkAfVFqs5BaY4Lhm7jrwRqHbYENT3emzIHjGaGQ2G1otqDF70GG+kK1jFF42NUKAxpGynA2HaOCywgZyzAk48XDd/AKeNMig0qXhZnjPsYjkxnr provision" > /root/.ssh/authorized_keys; \
+        sed -ie "s/#PermitRootLogin prohibit-password/PermitRootLogin prohibit-password/" /etc/ssh/sshd_config; \
+        exit 0 \
+      '
+  apt:
+    disable_components: []
+    geoip: true
+    preserve_sources_list: false
+    primary:
+    - arches:
+      - amd64
+      - i386
+      uri: http://archive.ubuntu.com/ubuntu
+    - arches:
+      - default
+      uri: http://ports.ubuntu.com/ubuntu-ports
+  drivers:
+    install: false
+  identity:
+    hostname: ubuntu-node
+    password: '$6$.BFZ1elD2n$Sl4Y2XA/0O2gnyPohXucUMGzjgT8oeV5DB60LWsx/taZpmu3ND0umdBdvajHuNrc6UMi3VxiAdjT3JlVZFDQa0'
+    realname: ubuntu
+    username: ubuntu
+  kernel:
+    package: linux-generic
+  keyboard:
+    layout: us
+    toggle: null
+    variant: ''
+  locale: en_US.UTF-8
+  timezone: Asia/Jakarta
+  network:
+    ethernets:
+      ens33:
+        addresses:
+        - 10.10.180.119/24
+        gateway4: 10.10.180.254
+        nameservers:
+          addresses:
+          - 10.10.180.1
+          search: []
+    version: 2
+  source:
+    id: synthesized
+    search_drivers: false
+  ssh:
+    allow-pw: true
+    authorized-keys: []
+    install-server: true
+  storage:
+    config:
+    - {type: disk, ptable: gpt, path: /dev/sda, wipe: superblock-recursive, preserve: false, grub_device: true, name: '', id: disk-sda}
+    - {type: partition, device: disk-sda, size: 1048576, flag: bios_grub, number: 1, preserve: false, id: partition-0, grub_device: false, offset: 1048576}
+    - {type: partition, device: disk-sda, size: 2147483648, wipe: superblock, number: 2, preserve: false, id: partition-1, grub_device: false, offset: 2097152}
+    - {type: partition, device: disk-sda, size: 83748716544, wipe: superblock, number: 3, preserve: false, id: partition-2, grub_device: false, offset: 2149580800}
+    - {type: lvm_volgroup, name: ubuntu-vg, devices: [partition-2], preserve: false, id: lvm_volgroup-0}
+    - {type: lvm_partition, volgroup: lvm_volgroup-0, id: lvm_partition-0, name: root, wipe: superblock, preserve: false, size: 25769803776B}
+    - {type: lvm_partition, volgroup: lvm_volgroup-0, id: lvm_partition-2, name: log, wipe: superblock, preserve: false, size: 17179869184B}
+    - {type: lvm_partition, volgroup: lvm_volgroup-0, id: lvm_partition-3, name: audit, wipe: superblock, preserve: false, size: 4294967296B}
+    - {type: lvm_partition, volgroup: lvm_volgroup-0, id: lvm_partition-4, name: vartmp, wipe: superblock, preserve: false, size: 4294967296B}
+    - {type: lvm_partition, volgroup: lvm_volgroup-0, id: lvm_partition-5, name: home, wipe: superblock, preserve: false, size: 12884901888B}
+    - {type: lvm_partition, volgroup: lvm_volgroup-0, id: lvm_partition-6, name: var, wipe: superblock, preserve: false, size: 19323158528B}
+    - {type: format, fstype: ext4, volume: partition-1, preserve: false, id: format-0}
+    - {type: format, fstype: ext4, volume: lvm_partition-0, preserve: false, id: format-2}
+    - {type: format, fstype: ext4, volume: lvm_partition-2, preserve: false, id: format-4}
+    - {type: format, fstype: ext4, volume: lvm_partition-3, preserve: false, id: format-5}
+    - {type: format, fstype: ext4, volume: lvm_partition-4, preserve: false, id: format-6}
+    - {type: format, fstype: ext4, volume: lvm_partition-5, preserve: false, id: format-7}
+    - {type: format, fstype: ext4, volume: lvm_partition-6, preserve: false, id: format-8}
+    - {type: mount, device: format-0, path: /boot, id: mount-0}
+    - {type: mount, device: format-2, path: /, id: mount-2}
+    - {type: mount, device: format-4, path: /var/log, id: mount-4}
+    - {type: mount, device: format-5, path: /var/log/audit, id: mount-5}
+    - {type: mount, device: format-6, path: /var/tmp, id: mount-6}    
+    - {type: mount, device: format-7, path: /home, id: mount-7}
+    - {type: mount, device: format-8, path: /var, id: mount-8}
+  updates: security
+  version: 1

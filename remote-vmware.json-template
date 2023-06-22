@@ -1,0 +1,8 @@
+ {
+   "packer_remote_host": "ESXI-IP",
+   "packer_remote_username": "ESXI-USER",
+   "packer_remote_password": "ESXI-PASSWORD",
+   "packer_remote_datastore": "ESXI-DATASTORE",
+   "packer_remote_network": "ESXI-NETWORK"
+ }
+

@@ -1,0 +1,29 @@
+---
+- name: Checkout and Configure Hardening
+  hosts: localhost
+  become: yes
+  #remote_user: root
+  gather_facts: no
+
+  tasks:
+    - name: install git
+      apt:
+        name: git
+        state: present
+
+    - name: checkout CIS v 1.1.0 hardening repository
+      ansible.builtin.git:
+        repo: 'https://github.com/elfrin-ui/cis-ansible-ubuntu-20.04'
+        dest: /etc/ansible/roles/cis-ansible-ubuntu-20.04
+        version: master
+
+    - name: Remove git
+      apt:
+        name: git
+        state: absent
+
+    - name: Running the hardening role
+      ansible.builtin.include_role:
+        name: cis-ansible-ubuntu-20.04
+...
+

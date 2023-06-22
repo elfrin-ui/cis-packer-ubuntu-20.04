@@ -1,0 +1,16 @@
+# Cache objects
+packer_cache/
+
+# Crash log
+crash.log
+
+# For built boxes
+*.box
+*.iso
+*.ova
+*.ovf
+
+key/
+output-ubuntu-harden
+remote-vmware.json
+
