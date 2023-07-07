@@ -23,11 +23,11 @@ To use this repository, follow the steps below:
 
 4. Validate the Packer template before building the image:
 
-   `packer validate cis-ubuntu20.04.5.json --var-file remote-vmware.json`
+   `packer validate -var-file remote-vmware.json cis-ubuntu20.04.5.json`
 
 5. Build the machine image using Packer:
 
-   `packer build -force cis-ubuntu20.04.5.json --var-file remote-vmware.json`
+   `packer build -force -var-file remote-vmware.json cis-ubuntu20.04.5.json `
 
 6. Packer will start the image creation process, executing the defined provisioning steps and configurations. Once the process is complete, you will have a machine image ready to use.
 
